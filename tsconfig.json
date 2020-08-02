@@ -6,7 +6,7 @@
         "rootDir": "src",
         "outDir": "build",
         "sourceMap": true,
-        "lib": ["ESNext", "DOM"],
+        "lib": ["ESNext"],
         "moduleResolution": "node",
         "target": "ES5",
     },
