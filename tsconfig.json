@@ -1,0 +1,13 @@
+{
+    "include": ["src"],
+    "compilerOptions": {
+        "strict": true,
+        "noFallthroughCasesInSwitch": true,
+        "rootDir": "src",
+        "outDir": "build",
+        "sourceMap": true,
+        "lib": ["ES2015"],
+        "moduleResolution": "node",
+        "target": "ES5",
+    },
+}
