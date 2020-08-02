@@ -8,9 +8,14 @@
         "check": "tsc --noEmit -p . && npm run lint"
     },
     "devDependencies": {
+        "@types/d3": "^5.7.2",
         "@types/node": "^14.0.27",
         "@typescript-eslint/parser": "^3.7.0",
         "eslint": "^7.5.0",
         "typescript": "^3.9.7"
+    },
+    "dependencies": {
+        "@asgerf/strongcli": "^0.1.1",
+        "d3-flame-graph": "^3.1.1"
     }
 }
