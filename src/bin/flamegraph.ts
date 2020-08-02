@@ -2,6 +2,7 @@ import * as cli from '@asgerf/strongcli';
 import * as fs from 'fs';
 import * as pathlib from 'path';
 import { getFlamegraphFromLogText } from '../common/flamegraph_builder';
+import escapeHtml = require('lodash.escape');
 
 interface Options {
     outputFile: string;
@@ -71,15 +72,12 @@ let outputDataFile = outputFile + '.data.js';
 
 let flamegraph = getFlamegraphFromLogText(fs.readFileSync(input, 'utf8'));
 
-let htmlTemplateFile = pathlib.join(__dirname, '../../src/web/flamegraph.html');
+let dirname = pathlib.dirname(fs.realpathSync(process.argv[1]));
+let htmlTemplateFile = pathlib.join(dirname, 'flamegraph.html');
 let htmlTemplateText = fs.readFileSync(htmlTemplateFile, 'utf8');
 
-function escapeHtml(text: string) {
-    return String(text).replace(/[<>&'"]/g, m => '&#' + m.charCodeAt(0).toString(16) + ';');
-}
-
 let htmlText = htmlTemplateText
-    .replace(/\.\.\/\.\.\/(node_modules|build)\//g, m => pathlib.join(__dirname, m))
+    .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(dirname, m))
     .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
 
 fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
