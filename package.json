@@ -16,6 +16,7 @@
     },
     "dependencies": {
         "@asgerf/strongcli": "^0.1.1",
-        "d3-flame-graph": "^3.1.1"
+        "d3-flame-graph": "^3.1.1",
+        "open": "^7.1.0"
     }
 }

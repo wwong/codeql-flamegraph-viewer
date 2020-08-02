@@ -5,6 +5,7 @@ import { getFlamegraphFromLogText } from './flamegraph_builder';
 
 interface Options {
     outputFile: string;
+    open: boolean;
 }
 let program = cli.program({
     helpIfEmpty: true,
@@ -26,6 +27,9 @@ let { options, args } = program.main<Options>({
 Where to write the output. A file with the suffix '.data.js' will be created as well.
 Defaults to 'flamegraph.html'.
 `,
+    },
+    open: {
+        description: 'Open the generated HTML file in a browser.'
     }
 });
 
@@ -78,7 +82,11 @@ let htmlText = htmlTemplateText
     .replace(/\.\.\/(node_modules|build)\//g, m => pathlib.join(__dirname, m))
     .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
 
-fs.writeFileSync(options.outputFile, htmlText, { encoding: 'utf8' });
+fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
 
 let dataJs = 'window.codeqlFlamegraphData = ' + JSON.stringify(flamegraph);
-fs.writeFileSync(options.outputFile + '.data.js', dataJs, { encoding: 'utf8' });
+fs.writeFileSync(outputFile + '.data.js', dataJs, { encoding: 'utf8' });
+
+if (options.open) {
+    require('open')(outputFile);
+}
