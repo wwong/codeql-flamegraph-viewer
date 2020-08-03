@@ -1,13 +1,13 @@
 import * as cli from '@asgerf/strongcli';
 import * as fs from 'fs';
 import * as pathlib from 'path';
-import { getFlamegraphFromLogStream } from '../common/flamegraph_builder';
+import { getFlamegraphFromLogStream, getFlamegraphFromLogText } from '../common/flamegraph_builder';
 import escapeHtml = require('lodash.escape');
 
 interface Options {
     outputFile: string;
     open: boolean;
-    sync: boolean;
+    async: boolean;
 }
 let program = cli.program({
     helpIfEmpty: true,
@@ -33,8 +33,8 @@ Defaults to 'flamegraph.html'.
     open: {
         description: 'Open the generated HTML file in a browser.'
     },
-    sync: {
-        description: 'Enables synchronous parsing (for benchmarking)'
+    async: {
+        description: 'Use asynchronous parsing (for benchmarking)',
     }
 });
 
@@ -75,7 +75,9 @@ mkdirp(outputDir);
 let outputDataFile = outputFile + '.data.js';
 
 async function main() {
-    let flamegraph = await getFlamegraphFromLogStream(fs.createReadStream(input));
+    let flamegraph = options.async
+        ? await getFlamegraphFromLogStream(fs.createReadStream(input))
+        : getFlamegraphFromLogText(fs.readFileSync(input, 'utf8'));
 
     let dirname = pathlib.dirname(fs.realpathSync(process.argv[1]));
     let htmlTemplateFile = pathlib.join(dirname, 'flamegraph.html');
