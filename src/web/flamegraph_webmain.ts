@@ -5,25 +5,60 @@ import { FlamegraphNode, getFlamegraphFromLogText } from '../common/flamegraph_b
 import escape = require('lodash.escape');
 import d3f = require('d3-flame-graph');
 
+type D3Node = { data: FlamegraphNode };
+
 const detailsView = document.getElementById('details')!;
 const tupleCountView = document.getElementById('tuple-count-view')!;
 const instructionsContainer = document.getElementById('instructions-container')!;
 const instructionsView = document.getElementById('instructions')!;
 
-var chart = d3f.flamegraph().width(960);
+/** The most recently clicked node in the flamegraph. */
+let focusedNode: FlamegraphNode | undefined;
 
-var tip = (d3f as any).defaultFlamegraphTooltip() // missing from .d.ts file
-    .html(function (d: { data: FlamegraphNode }) {
-        showDetailsForNode(d.data);
-        return escape(d.data.name + ': ' + d.data.value);
+var chart = d3f.flamegraph()
+    .width(960)
+    .onClick((event: D3Node) => {
+        focusedNode = event.data;
+        showDetailsForNode(focusedNode);
+    }
+);
+
+function insertDecimalSeparators(number: number | string) {
+    let string = String(number);
+    let parts = [];
+    for (let i = string.length; i > 0; i -= 3) {
+        parts.push(string.substring(Math.max(0, i - 3), i));
+    }
+    return parts.reverse().join(',');
+}
+
+var tooltip = (d3f as any).defaultFlamegraphTooltip() // missing from .d.ts file
+    .html(function (d: D3Node) {
+        return escape(d.data.name + ': ' + insertDecimalSeparators(d.data.value));
     });
-chart.tooltip(tip as any);
+
+function wrapFn<This, Args extends any[], R>(fn: (this: This, ...args: Args) => R, callback: (...args: Args) => void) {
+    return function(this: This, ...args: Args) {
+        let result = fn.apply(this, args);
+        callback(...args);
+        return result;
+    }
+}
+
+// We don't have proper hooks for mouseover/mouseout events, so we hijack the tooltip's show/hide events.
+tooltip.show = wrapFn(tooltip.show, (d: D3Node) => {
+    showDetailsForNode(d.data);
+});
+tooltip.hide = wrapFn(tooltip.hide, () => {
+    showDetailsForNode(focusedNode);
+});
+chart.tooltip(tooltip);
 
 function deepJoin(str: string[][]) {
     return str.map(s => s.join('\n')).join('\n');
 }
-function showDetailsForNode(node: FlamegraphNode) {
-    let iterations = node.rawLines ?? [];
+function showDetailsForNode(node: FlamegraphNode | undefined) {
+    let iterations = node?.rawLines ?? [];
     if (iterations.length > 20) {
         let first = iterations.slice(0, 10);
         let last = iterations.slice(-10);
@@ -35,6 +70,7 @@ function showDetailsForNode(node: FlamegraphNode) {
 }
 
 function showFlamegraph(rootNode: FlamegraphNode) {
+    focusedNode = rootNode;
     select('#chart')
         .datum(rootNode)
         .call(chart);
