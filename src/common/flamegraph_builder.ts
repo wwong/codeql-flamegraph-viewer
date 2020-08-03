@@ -1,5 +1,5 @@
 import { getDominanceRelation } from './dominators';
-import { streamLines as streamLinesSync, streamLinesAsync } from './line_stream';
+import { streamLinesSync, streamLinesAsync } from './line_stream';
 import { abbreviateStrings } from './string_set_abbreviation';
 import { getStronglyConnectedComponents, Scc } from './strongly_connected_components';
 import { getDependenciesFromRA, Pipeline, StageEndedEvent, TupleCountParser, TupleCountStream } from './tuple_counts';

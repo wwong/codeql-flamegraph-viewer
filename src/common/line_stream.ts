@@ -63,7 +63,7 @@ interface Matcher {
 }
 
 /** Creates a `LineStream` and feeds it the given text once listeners have been added. */
-export function streamLines(text: string) {
+export function streamLinesSync(text: string) {
     let parser = new LineStream();
     return new SyncStreamBuilder(() => parser.addText(text), parser);
 }
