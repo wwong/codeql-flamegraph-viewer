@@ -101,7 +101,7 @@ export class TupleCountParser implements TupleCountStream {
         input.on(/- ([\w#:]+) has (\d+) rows/, parseRelationSize);
         input.on(/Found relation ([\w#:]+)\b.*\bRelation has (\d+) rows/, parseRelationSize);
 
-        input.on(/.*(\d+)\s+(?:~(\d+)%)?\s+[{](\d+)[}]\s+r(\d+)\s+=\s+(.*)/, match => {
+        input.on(/(\d+)\s+(?:~(\d+)%)?\s+[{](\d+)[}]\s+r(\d+)\s+=\s+(.*)/, match => {
             let [, tupleCountStr, duplicationStr, arityStr, resultVariable, raText] = match;
             let tupleCount = Number(tupleCountStr);
             let duplication = Number(duplicationStr);
