@@ -1,5 +1,3 @@
-import { LineStream, streamLines, streamLinesAsync } from "./line_stream";
-
 /**
  * An event listener for events of type `T`.
  */
