@@ -14,11 +14,25 @@ var chart = d3f.flamegraph().width(960);
 
 var tip = (d3f as any).defaultFlamegraphTooltip() // missing from .d.ts file
     .html(function (d: { data: FlamegraphNode }) {
-        let rawLines = d.data.rawLines;
-        tupleCountView.innerText = rawLines == null ? '' : rawLines.join('\n');
+        showDetailsForNode(d.data);
         return escape(d.data.name + ': ' + d.data.value);
     });
 chart.tooltip(tip as any);
+
+function deepJoin(str: string[][]) {
+    return str.map(s => s.join('\n')).join('\n');
+}
+function showDetailsForNode(node: FlamegraphNode) {
+    let iterations = node.rawLines ?? [];
+    if (iterations.length > 20) {
+        let first = iterations.slice(0, 10);
+        let last = iterations.slice(-10);
+        let skipped = `\n\n-------- Skipped ${iterations.length - 20} iterations -----------\n\n`
+        tupleCountView.innerText = deepJoin(first) + '\n' + skipped + deepJoin(last);
+    } else {
+        tupleCountView.innerText = deepJoin(iterations);
+    }
+}
 
 function showFlamegraph(rootNode: FlamegraphNode) {
     select('#chart')

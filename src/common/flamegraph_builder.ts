@@ -17,7 +17,7 @@ export interface FlamegraphNode {
     name: string;
     value: number;
     children: FlamegraphNode[];
-    rawLines?: string[];
+    rawLines?: string[][];
 }
 
 type SccNode = Scc<string>;
@@ -29,7 +29,7 @@ class PredicateNode {
     dependents = new Set<string>();
     seenEvaluation = false;
 
-    rawLines: string[] = [];
+    rawLines: string[][] = [];
 
     scc: SccNode | undefined;
 }
@@ -73,7 +73,7 @@ export class FlamegraphBuilder {
                 this.getPredicateNode(otherRelation).dependents.add(name);
             }
         }
-        node.rawLines.push(...pipeline.rawLines);
+        node.rawLines.push(pipeline.rawLines);
     }
 
     private getRoots() {
