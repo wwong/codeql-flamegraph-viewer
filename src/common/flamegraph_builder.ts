@@ -9,7 +9,6 @@ export interface FlamegraphNode {
     value: number;
     children: FlamegraphNode[];
     rawLines?: string[];
-    tupleCountEvents?: Pipeline[];
 }
 
 export function getFramegraphFromPipelines(pipelines: Pipeline[]) {
@@ -35,8 +34,6 @@ class PredicateNode {
     dependencies = new Set<string>();
     dependents = new Set<string>();
     seenEvaluation = false;
-
-    tupleCountEvents: Pipeline[] = [];
 
     rawLines: string[] = [];
 
@@ -89,7 +86,6 @@ export class FlamegraphBuilder {
             }
         }
         node.rawLines.push(...pipeline.rawLines);
-        node.tupleCountEvents.push(pipeline);
     }
 
     getRoots() {
@@ -118,7 +114,6 @@ export class FlamegraphBuilder {
             value,
             children,
             rawLines: node.rawLines,
-            tupleCountEvents: node.tupleCountEvents,
         };
     }
 
