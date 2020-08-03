@@ -52,7 +52,7 @@ if (fs.statSync(input).isDirectory()) {
     if (logFiles.length === 0) {
         fail('No logs in snapshot: ' + input);
     }
-    input = logFiles[logFiles.length - 1];
+    input = pathlib.join(logDir, logFiles[logFiles.length - 1]);
 }
 
 let { outputFile } = options;

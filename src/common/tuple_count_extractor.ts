@@ -1,5 +1,12 @@
 import { EventStream } from './event_stream';
-import { StreamParser } from './stream_parser';
+import { LineStream } from './line_stream';
+
+export interface TupleCountStream {
+    onPipeline: EventStream<Pipeline>;
+    onPredicateSize: EventStream<PredicateSizeEvent>;
+    onStageEnded: EventStream<StageEndedEvent>;
+    end: EventStream<void>;
+}
 
 /**
  * An RA pipeline with tuple counts.
@@ -24,15 +31,15 @@ export interface PredicateSizeEvent {
     size: number;
 }
 
-export interface EndStageEvent {
+export interface StageEndedEvent {
     queryPredicates: string[];
     queryName: string;
 }
 
-export class TupleCountExtractor {
+export class TupleCountExtractor implements TupleCountStream {
     public readonly onPipeline = new EventStream<Pipeline>();
     public readonly onPredicateSize = new EventStream<PredicateSizeEvent>();
-    public readonly onStageEnded = new EventStream<EndStageEvent>();
+    public readonly onStageEnded = new EventStream<StageEndedEvent>();
     public readonly end: EventStream<void>;
 
     /**
@@ -46,7 +53,7 @@ export class TupleCountExtractor {
     public seenPredicateEvaluation = false;
 
     constructor(
-        public readonly input = new StreamParser()) {
+        public readonly input = new LineStream()) {
         this.end = input.end;
 
         input.on(/CSV_IMB_QUERIES:\s*(.*)/, ([whole, row]) => {
@@ -118,6 +125,10 @@ export class TupleCountExtractor {
         }
         );
     }
+}
+
+export function streamTupleCounts(input: LineStream) {
+    return new TupleCountExtractor(input);
 }
 
 function allMatches(regexp: RegExp, input: string): RegExpMatchArray[] {

@@ -1,8 +1,10 @@
-import { Pipeline, TupleCountExtractor, getDependenciesFromRA, EndStageEvent as StageEndedEvent } from './tuple_count_extractor';
+import { Pipeline, TupleCountExtractor, getDependenciesFromRA, StageEndedEvent, TupleCountStream } from './tuple_count_extractor';
 import { getDominanceRelation } from './dominators';
 import { getStronglyConnectedComponents, Scc } from './strongly_connected_components';
 import { getInverse, withoutNulls } from './util';
 import { abbreviateStrings } from './string_set_abbreviation';
+import { EventStream } from './event_stream';
+import { streamLines } from './line_stream';
 
 export interface FlamegraphNode {
     name: string;
@@ -11,19 +13,12 @@ export interface FlamegraphNode {
     rawLines?: string[];
 }
 
-export function getFramegraphFromPipelines(pipelines: Pipeline[]) {
-    let builder = new FlamegraphBuilder();
-    for (let pipeline of pipelines) {
-        builder.addPipeline(pipeline);
-    }
-    return builder.finish();
+export interface FlamegraphStream {
+    onFlamegraph: EventStream<FlamegraphNode>;
 }
 
 export function getFlamegraphFromLogText(text: string) {
-    let parser = new TupleCountExtractor();
-    let builder = new FlamegraphBuilder(parser);
-    parser.input.addText(text);
-    return builder.finish();
+    return streamLines(text).thenNew(TupleCountExtractor).thenNew(FlamegraphBuilder).get().finish();
 }
 
 type SccNode = Scc<string>;
@@ -48,15 +43,9 @@ export class FlamegraphBuilder {
     predicateNodes = new Map<string, PredicateNode>();
     stageNodes: FlamegraphNode[] = [];
 
-    constructor(parser?: TupleCountExtractor) {
-        if (parser != null) {
-            this.listen(parser);
-        }
-    }
-
-    listen(parser: TupleCountExtractor) {
-        parser.onPipeline.listen(this.addPipeline.bind(this));
-        parser.onStageEnded.listen(this.handleStageEnded.bind(this));
+    constructor(input: TupleCountStream) {
+        input.onPipeline.listen(this.addPipeline.bind(this));
+        input.onStageEnded.listen(this.handleStageEnded.bind(this));
     }
 
     getPredicateNode(name: string) {
