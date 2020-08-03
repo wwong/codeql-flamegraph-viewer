@@ -1,5 +1,3 @@
-import { LineStream } from "./line_stream";
-
 /**
  * An event listener for events of type `T`.
  */

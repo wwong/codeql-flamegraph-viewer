@@ -1,9 +1,8 @@
-import { Pipeline, TupleCountExtractor, getDependenciesFromRA, StageEndedEvent, TupleCountStream } from './tuple_count_extractor';
+import { Pipeline, TupleCountParser, getDependenciesFromRA, StageEndedEvent, TupleCountStream } from './tuple_counts';
 import { getDominanceRelation } from './dominators';
 import { getStronglyConnectedComponents, Scc } from './strongly_connected_components';
 import { getInverse, withoutNulls } from './util';
 import { abbreviateStrings } from './string_set_abbreviation';
-import { EventStream } from './event_stream';
 import { streamLines } from './line_stream';
 
 export interface FlamegraphNode {
@@ -13,12 +12,8 @@ export interface FlamegraphNode {
     rawLines?: string[];
 }
 
-export interface FlamegraphStream {
-    onFlamegraph: EventStream<FlamegraphNode>;
-}
-
 export function getFlamegraphFromLogText(text: string) {
-    return streamLines(text).thenNew(TupleCountExtractor).thenNew(FlamegraphBuilder).get().finish();
+    return streamLines(text).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().finish();
 }
 
 type SccNode = Scc<string>;
