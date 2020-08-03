@@ -5,19 +5,19 @@ import { getStronglyConnectedComponents, Scc } from './strongly_connected_compon
 import { getDependenciesFromRA, Pipeline, StageEndedEvent, TupleCountParser, TupleCountStream } from './tuple_counts';
 import { getInverse, withoutNulls } from './util';
 
+export function getFlamegraphFromLogText(text: string): FlamegraphNode {
+    return streamLinesSync(text).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().finish();
+}
+
+export function getFlamegraphFromLogStream(stream: NodeJS.ReadableStream): Promise<FlamegraphNode> {
+    return streamLinesAsync(stream).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().then(x => x.finish());
+}
+
 export interface FlamegraphNode {
     name: string;
     value: number;
     children: FlamegraphNode[];
     rawLines?: string[];
-}
-
-export function getFlamegraphFromLogText(text: string) {
-    return streamLinesSync(text).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().finish();
-}
-
-export async function getFlamegraphFromLogStream(stream: NodeJS.ReadableStream) {
-    return streamLinesAsync(stream).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().then(x => x.finish());
 }
 
 type SccNode = Scc<string>;
