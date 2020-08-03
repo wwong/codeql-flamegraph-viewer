@@ -1,12 +1,13 @@
 import * as cli from '@asgerf/strongcli';
 import * as fs from 'fs';
 import * as pathlib from 'path';
-import { getFlamegraphFromLogText } from '../common/flamegraph_builder';
+import { getFlamegraphFromLogStream } from '../common/flamegraph_builder';
 import escapeHtml = require('lodash.escape');
 
 interface Options {
     outputFile: string;
     open: boolean;
+    sync: boolean;
 }
 let program = cli.program({
     helpIfEmpty: true,
@@ -31,6 +32,9 @@ Defaults to 'flamegraph.html'.
     },
     open: {
         description: 'Open the generated HTML file in a browser.'
+    },
+    sync: {
+        description: 'Enables synchronous parsing (for benchmarking)'
     }
 });
 
@@ -70,21 +74,25 @@ function mkdirp(path: string) {
 mkdirp(outputDir);
 let outputDataFile = outputFile + '.data.js';
 
-let flamegraph = getFlamegraphFromLogText(fs.readFileSync(input, 'utf8'));
+async function main() {
+    let flamegraph = await getFlamegraphFromLogStream(fs.createReadStream(input));
 
-let dirname = pathlib.dirname(fs.realpathSync(process.argv[1]));
-let htmlTemplateFile = pathlib.join(dirname, 'flamegraph.html');
-let htmlTemplateText = fs.readFileSync(htmlTemplateFile, 'utf8');
+    let dirname = pathlib.dirname(fs.realpathSync(process.argv[1]));
+    let htmlTemplateFile = pathlib.join(dirname, 'flamegraph.html');
+    let htmlTemplateText = fs.readFileSync(htmlTemplateFile, 'utf8');
 
-let htmlText = htmlTemplateText
-    .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(dirname, m))
-    .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
+    let htmlText = htmlTemplateText
+        .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(dirname, m))
+        .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
 
-fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
+    fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
 
-let dataJs = 'window.codeqlFlamegraphData = ' + JSON.stringify(flamegraph);
-fs.writeFileSync(outputFile + '.data.js', dataJs, { encoding: 'utf8' });
+    let dataJs = 'window.codeqlFlamegraphData = ' + JSON.stringify(flamegraph);
+    fs.writeFileSync(outputFile + '.data.js', dataJs, { encoding: 'utf8' });
 
-if (options.open) {
-    require('open')(outputFile);
+    if (options.open) {
+        require('open')(outputFile);
+    }
 }
+
+main();

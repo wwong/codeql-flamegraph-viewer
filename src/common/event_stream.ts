@@ -1,3 +1,5 @@
+import { LineStream, streamLines, streamLinesAsync } from "./line_stream";
+
 /**
  * An event listener for events of type `T`.
  */
@@ -26,32 +28,76 @@ export class EventStream<T> {
 }
 
 /**
- * Helper for composing long streams before firing off the input events.
+ * Helper for composing long streams before firing off the input events synchronously.
  *
- * Correct use of streams requires that all the listeners have been added before any
- * events are fired. Otherwise the events are lost, or you are forced to buffer the events.
+ * Correct use of streams requires that all listeners have been added before any
+ * events are fired. Otherwise the events are lost since we don't buffer the events.
  *
- * The stream builder encapsulates a value of type `T` which is considered "ready" once the underlying
- * events have been fired. The `.get` method unboxes the value, but triggers the underlying events
- * before returning.
+ * The stream builder knows how to trigger the input events synchronously, and encapsulates a value of type
+ * `T` which is considered "ready" once all input events have fired.
+ * The `.get` method triggers all input events and then returns the underlying value.
  */
-export class StreamBuilder<T> {
+export class SyncStreamBuilder<T> {
     constructor(
         private readonly fire: () => void,
         private readonly value: T) {}
 
-    then<R>(transformer: (t: T) => R): StreamBuilder<R> {
-        return new StreamBuilder(this.fire, transformer(this.value));
+    /**
+     * Adds a consumer of the current stream value and returns the result boxed in a stream builder.
+     */
+    then<R>(transformer: (t: T) => R): SyncStreamBuilder<R> {
+        return new SyncStreamBuilder(this.fire, transformer(this.value));
     }
 
-    /** Like `then` but invokes the transformer as a constructor. */
-    thenNew<R>(transformer: new (t: T) => R): StreamBuilder<R> {
-        return new StreamBuilder(this.fire, new transformer(this.value));
+    /**
+     * Adds a consumer of the current stream value and returns the result boxed in a stream builder.
+     */
+    thenNew<R>(transformer: new (t: T) => R): SyncStreamBuilder<R> {
+        return new SyncStreamBuilder(this.fire, new transformer(this.value));
     }
 
     /** Fires all input events and then returns the boxed value. */
     get(): T {
         this.fire();
         return this.value;
+    }
+}
+
+/**
+ * Helper for composing long streams and then waiting for the input stream to end.
+ *
+ * Correct use of streams requires that all the listeners have been added before any
+ * events are fired. Otherwise the events are lost since we don't buffer the events.
+ *
+ * The stream builder knows when the input stream has ended, and encapsulates a value of type `T`
+ * which is considered "ready" once all inputs events have fired.
+ * The `.get` returns a promise for the underlying value when it is ready.
+ */
+export class AsyncStreamBuilder<T> {
+    constructor(
+        private readonly end: EventStream<any>,
+        private readonly value: T) {}
+
+    /**
+     * Adds a consumer of the current stream value and returns the result boxed in a stream builder.
+     */
+    then<R>(transformer: (t: T) => R): AsyncStreamBuilder<R> {
+        return new AsyncStreamBuilder(this.end, transformer(this.value));
+    }
+
+    /**
+     * Adds a consumer of the current stream value and returns the result boxed in a stream builder.
+     */
+    thenNew<R>(transformer: new (t: T) => R): AsyncStreamBuilder<R> {
+        return new AsyncStreamBuilder(this.end, new transformer(this.value));
+    }
+
+    /** Waits for the input stream to end, then returns the boxed value. */
+    get(): Promise<T> {
+        return new Promise<T>(resolve => {
+            this.end.listen(() => {
+                resolve(this.value);
+            });
+        });
     }
 }

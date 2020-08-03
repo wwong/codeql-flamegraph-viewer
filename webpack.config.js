@@ -1,4 +1,5 @@
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const IgnorePlugin = require('webpack').IgnorePlugin;
 
 const common = {
     resolve: {
@@ -40,6 +41,10 @@ const web = {
                     to: 'flamegraph.html'
                 }
             ]
+        }),
+        new IgnorePlugin({
+            // Ignore NodeJS module imports when building for web
+            resourceRegExp: /^readline$/
         }),
     ]
 };

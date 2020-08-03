@@ -1,4 +1,4 @@
-import { EventStream, Listener, StreamBuilder } from './event_stream';
+import { EventStream, Listener, SyncStreamBuilder, AsyncStreamBuilder } from './event_stream';
 
 /**
  * Reads data line by line and invokes event handlers with associated regexps.
@@ -65,5 +65,19 @@ interface Matcher {
 /** Creates a `LineStream` and feeds it the given text once listeners have been added. */
 export function streamLines(text: string) {
     let parser = new LineStream();
-    return new StreamBuilder(() => parser.addText(text), parser);
+    return new SyncStreamBuilder(() => parser.addText(text), parser);
+}
+
+/** Creates a `LineStream` from the given NodeJS stream. */
+export function streamLinesAsync(stream: NodeJS.ReadableStream) {
+    let parser = new LineStream();
+    let readline = require('readline') as typeof import('readline');
+    let reader = readline.createInterface(stream);
+    reader.on('line', line => {
+        parser.addLine(line);
+    });
+    reader.on('close', () => {
+        parser.addEof();
+    });
+    return new AsyncStreamBuilder(parser.end, parser);
 }

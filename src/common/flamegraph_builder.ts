@@ -1,9 +1,9 @@
-import { Pipeline, TupleCountParser, getDependenciesFromRA, StageEndedEvent, TupleCountStream } from './tuple_counts';
 import { getDominanceRelation } from './dominators';
-import { getStronglyConnectedComponents, Scc } from './strongly_connected_components';
-import { getInverse, withoutNulls } from './util';
+import { streamLines as streamLinesSync, streamLinesAsync } from './line_stream';
 import { abbreviateStrings } from './string_set_abbreviation';
-import { streamLines } from './line_stream';
+import { getStronglyConnectedComponents, Scc } from './strongly_connected_components';
+import { getDependenciesFromRA, Pipeline, StageEndedEvent, TupleCountParser, TupleCountStream } from './tuple_counts';
+import { getInverse, withoutNulls } from './util';
 
 export interface FlamegraphNode {
     name: string;
@@ -13,7 +13,11 @@ export interface FlamegraphNode {
 }
 
 export function getFlamegraphFromLogText(text: string) {
-    return streamLines(text).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().finish();
+    return streamLinesSync(text).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().finish();
+}
+
+export async function getFlamegraphFromLogStream(stream: NodeJS.ReadableStream) {
+    return streamLinesAsync(stream).thenNew(TupleCountParser).thenNew(FlamegraphBuilder).get().then(x => x.finish());
 }
 
 type SccNode = Scc<string>;
@@ -39,11 +43,11 @@ export class FlamegraphBuilder {
     stageNodes: FlamegraphNode[] = [];
 
     constructor(input: TupleCountStream) {
-        input.onPipeline.listen(this.addPipeline.bind(this));
-        input.onStageEnded.listen(this.handleStageEnded.bind(this));
+        input.onPipeline.listen(this.onPipeline.bind(this));
+        input.onStageEnded.listen(this.onStageEnded.bind(this));
     }
 
-    getPredicateNode(name: string) {
+    private getPredicateNode(name: string) {
         let result = this.predicateNodes.get(name);
         if (result == null) {
             result = new PredicateNode(name);
@@ -52,12 +56,12 @@ export class FlamegraphBuilder {
         return result;
     }
 
-    handleStageEnded(event: StageEndedEvent) {
+    private onStageEnded(event: StageEndedEvent) {
         this.stageNodes.push(this.getFlamegraphNodeFromStage(event));
         this.predicateNodes.clear();
     }
 
-    addPipeline(pipeline: Pipeline) {
+    private onPipeline(pipeline: Pipeline) {
         let name = rewritePredicateName(pipeline.predicate);
         let node = this.getPredicateNode(name);
         node.seenEvaluation = true;
@@ -72,7 +76,7 @@ export class FlamegraphBuilder {
         node.rawLines.push(...pipeline.rawLines);
     }
 
-    getRoots() {
+    private getRoots() {
         let roots: string[] = [];
         this.predicateNodes.forEach((data, name) => {
             if (data.dependents.size === 0) {
@@ -82,7 +86,7 @@ export class FlamegraphBuilder {
         return roots;
     }
 
-    getFlamegraphNodeFromPredicate(predicate: string, dominated: Map<SccNode | null, SccNode[]>, successors: SccNode[]): FlamegraphNode | undefined {
+    private getFlamegraphNodeFromPredicate(predicate: string, dominated: Map<SccNode | null, SccNode[]>, successors: SccNode[]): FlamegraphNode | undefined {
         let node = this.getPredicateNode(predicate);
         if (!node.seenEvaluation) { return undefined; }
         let children: FlamegraphNode[] = [];
@@ -101,7 +105,7 @@ export class FlamegraphBuilder {
         };
     }
 
-    getFlamegraphNodeFromScc(scc: SccNode, dominated: Map<SccNode | null, SccNode[]>): FlamegraphNode | undefined {
+    private getFlamegraphNodeFromScc(scc: SccNode, dominated: Map<SccNode | null, SccNode[]>): FlamegraphNode | undefined {
         let { members } = scc;
         if (members.length === 1) {
             return this.getFlamegraphNodeFromPredicate(members[0], dominated, dominated.get(scc) ?? []);
@@ -160,3 +164,4 @@ export class FlamegraphBuilder {
 function totalValue(children: FlamegraphNode[]) {
     return children.reduce((x, y) => x + y.value, 0);
 }
+
