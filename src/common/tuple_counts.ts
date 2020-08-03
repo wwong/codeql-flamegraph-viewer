@@ -55,7 +55,12 @@ export class TupleCountParser implements TupleCountStream {
     constructor(public readonly input: LineStream) {
         this.end = input.end;
 
+        let seenCsvImbQueriesHeader = false;
         input.on(/CSV_IMB_QUERIES:\s*(.*)/, ([whole, row]) => {
+            if (!seenCsvImbQueriesHeader) {
+                seenCsvImbQueriesHeader = true;
+                return;
+            }
             let [queryType, queryPredicateStr, queryName, stage, success, time, numResult, cumulativeTime] = row.split(',');
             let queryPredicates = queryPredicateStr.split(' ');
             this.onStageEnded.fire({
