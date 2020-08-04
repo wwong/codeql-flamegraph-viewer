@@ -18,6 +18,7 @@ export interface FlamegraphNode {
     value: number;
     children: FlamegraphNode[];
     rawLines?: string[][];
+    ownValue?: number;
 }
 
 type SccNode = Scc<string>;
@@ -100,6 +101,7 @@ export class FlamegraphBuilder {
         return {
             name: node.name,
             value,
+            ownValue: node.tupleCount,
             children,
             rawLines: node.rawLines,
         };

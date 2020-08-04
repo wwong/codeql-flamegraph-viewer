@@ -34,7 +34,11 @@ function insertDecimalSeparators(number: number | string) {
 
 var tooltip = (d3f as any).defaultFlamegraphTooltip() // missing from .d.ts file
     .html(function (d: D3Node) {
-        return escape(insertDecimalSeparators(d.data.value)) + ' tuples dominated by:<br><br>' + escape(d.data.name);
+        let { name, value, ownValue } = d.data;
+        let own = ownValue == null ? '' : escape(insertDecimalSeparators(ownValue)) + ' tuples from own evaluation<br>';
+        return escape(name) + '<br><br>' +
+            own +
+            escape(insertDecimalSeparators(value)) + ' tuples from dominated dependencies';
     });
 
 function wrapFn<This, Args extends any[], R>(fn: (this: This, ...args: Args) => R, callback: (...args: Args) => void) {
