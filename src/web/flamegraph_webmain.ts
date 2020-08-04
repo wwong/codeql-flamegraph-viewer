@@ -7,16 +7,16 @@ import d3f = require('d3-flame-graph');
 
 type D3Node = { data: FlamegraphNode };
 
-const detailsView = document.getElementById('details')!;
 const tupleCountView = document.getElementById('tuple-count-view')!;
 const instructionsContainer = document.getElementById('instructions-container')!;
 const instructionsView = document.getElementById('instructions')!;
+const fileUploadInput = document.getElementById('file-upload')! as HTMLInputElement;
 
 /** The most recently clicked node in the flamegraph. */
 let focusedNode: FlamegraphNode | undefined;
 
 var chart = d3f.flamegraph()
-    .width(960)
+    .width(document.body.clientWidth - 400)
     .onClick((event: D3Node) => {
         focusedNode = event.data;
         showDetailsForNode(focusedNode);
@@ -70,6 +70,13 @@ function showDetailsForNode(node: FlamegraphNode | undefined) {
 }
 
 function showFlamegraph(rootNode: FlamegraphNode) {
+    if (rootNode.children.length === 0) {
+        instructionsView.innerText = 'It seems there were no tuple counts in that file.'
+        instructionsView.style.display = 'visible';
+        return;
+    } else {
+        instructionsView.style.display = 'none';
+    }
     focusedNode = rootNode;
     select('#chart')
         .datum(rootNode)
@@ -82,18 +89,30 @@ if ('codeqlFlamegraphData' in window) {
 } else {
     instructionsContainer.style.display = 'block';
 
-    document.body.addEventListener('paste', event => {
-        event.preventDefault();
-        let paste: string = (event.clipboardData || (window as any).clipboardData).getData('text');
+    const tryLoad = (getText: () => Promise<string>) => {
         instructionsView.innerText = 'Loading...';
-        setTimeout(() => {
+        setTimeout(async () => {
             try {
-                showFlamegraph(getFlamegraphFromLogText(paste));
-                instructionsContainer.style.display = 'none';
+                let text = await getText();
+                showFlamegraph(getFlamegraphFromLogText(text));
             } catch (e) {
                 instructionsContainer.innerText = 'Failed';
                 console.error(e);
             }
         }, 1);
+    }
+
+    document.body.addEventListener('paste', event => {
+        event.preventDefault();
+        // Note: we have to request the text immediately; it can't be deferred.
+        let text: string = (event.clipboardData || (window as any).clipboardData).getData('text');
+        tryLoad(async () => text);
+    });
+
+    fileUploadInput.addEventListener('change', async e => {
+        let files = fileUploadInput.files;
+        if (files == null || files.length < 1) return;
+        let file = files[0];
+        tryLoad(() => file.text());
     });
 }

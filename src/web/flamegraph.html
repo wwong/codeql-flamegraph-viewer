@@ -20,26 +20,51 @@
             font-size: 12pt;
             background-color: blanchedalmond;
             margin-top: 200px;
-            padding: 20px;
+            padding-top: 0px;
+            padding: 60px;
             width: 450px;
             display: inline-block;
+            cursor: pointer;
         }
 
         html {
             overflow-y: scroll;
         }
+
+        body {
+            color: rgb(78, 78, 78);
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        #header-bar {
+            text-align: left;
+            color: white;
+            background-color: steelblue;
+            padding-left: 20px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+
+        #title {
+            font-size: 16pt;
+        }
     </style>
 </head>
 
 <body>
+    <div id="header-bar">
+        <span id="title">Tuple count flamegraph</span>
+    </div>
     <div style="text-align: center;">
         <div id="chart"></div>
     </div>
-    <div id="details"></div>
     <div id="tuple-count-view"></div>
     <div id="instructions-container" style="display: none;">
-        <div id="instructions">
-            Paste a log file with tuple counts anywhere on this page.
+        <input type="file" style="display: none" id="file-upload">
+        <div id="instructions" onclick="document.getElementById('file-upload').click()">
+            <h3>Click to upload a log file with tuple counts</h3>
+            or paste it anywhere on this page.
         </div>
     </div>
     <script src="flamegraph_webmain.js"></script>
