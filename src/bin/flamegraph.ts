@@ -1,13 +1,20 @@
 import * as cli from '@asgerf/strongcli';
 import * as fs from 'fs';
 import * as pathlib from 'path';
-import { getFlamegraphFromLogStream, getFlamegraphFromLogText } from '../common/flamegraph_builder';
+import { getFlamegraphFromLogStream, getFlamegraphFromLogText, FlamegraphNode } from '../common/flamegraph_builder';
 import escapeHtml = require('lodash.escape');
+import { TraceEvent, Constants, TraceStreamJson } from '@tracerbench/trace-event';
+
+enum Format {
+    html = 'html',
+    speedscope = 'speedscope',
+}
 
 interface Options {
-    outputFile: string;
+    outputFile?: string;
     open: boolean;
     async: boolean;
+    format: Format;
 }
 let program = cli.program({
     helpIfEmpty: true,
@@ -24,42 +31,39 @@ let { options, args } = program.main<Options>({
         name: ['-o', '--output'],
         value: String,
         valueHint: 'file',
-        default: 'flamegraph.html',
-        description: `
-Where to write the output. A file with the suffix '.data.js' will be created as well.
-Defaults to 'flamegraph.html'.
-`,
+        description: 'Where to write the output.',
     },
     open: {
-        description: 'Open the generated HTML file in a browser.'
+        description: 'Open the generated HTML file in a browser. Has no effect for --format speedscope.'
     },
     async: {
         description: 'Use asynchronous parsing (for benchmarking)',
+    },
+    format: {
+        value: cli.oneOf(Format),
+        default: Format.html,
+        valueHint: Object.keys(Format).join('|'),
+        description: `Output format. Default is 'html'.`
     }
 });
 
-function fail(message: string): never {
-    console.error(message);
-    process.exit(1);
-}
-
 let input = args[0];
 if (!fs.existsSync(input)) {
-    fail('File not found: ' + input);
+    cli.fail('File not found: ' + input);
 }
 if (fs.statSync(input).isDirectory()) {
     let logDir = pathlib.join(input, 'log');
     if (!fs.existsSync(logDir) || !fs.statSync(logDir).isDirectory()) {
-        fail('Not a snapshot or log file: ' + input);
+        cli.fail('Not a snapshot or log file: ' + input);
     }
     let logFiles = fs.readdirSync(logDir).filter(f => /^execute-queries-[\d.]+\.log$/.test(f)).sort();
     if (logFiles.length === 0) {
-        fail('No logs in snapshot: ' + input);
+        cli.fail('No logs in snapshot: ' + input);
     }
     input = pathlib.join(logDir, logFiles[logFiles.length - 1]);
 }
 
-let { outputFile } = options;
+let outputFile = options.outputFile ?? (options.format === Format.html ? 'flamegraph.html' : 'flamegraph.json');
 let outputDir = pathlib.dirname(outputFile);
 
 function mkdirp(path: string) {
@@ -74,27 +78,69 @@ function mkdirp(path: string) {
 mkdirp(outputDir);
 let outputDataFile = outputFile + '.data.js';
 
+const formatters: { [K in Format]: (node: FlamegraphNode) => void } = {
+    [Format.html]: flamegraph => {
+        let dirname = pathlib.dirname(fs.realpathSync(process.argv[1]));
+        let htmlTemplateFile = pathlib.join(dirname, 'flamegraph.html');
+        let htmlTemplateText = fs.readFileSync(htmlTemplateFile, 'utf8');
+
+        let htmlText = htmlTemplateText
+            .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(dirname, m))
+            .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
+
+        fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
+
+        let dataJs = 'window.codeqlFlamegraphData = ' + JSON.stringify(flamegraph);
+        fs.writeFileSync(outputFile + '.data.js', dataJs, { encoding: 'utf8' });
+
+        if (options.open) {
+            require('open')(outputFile);
+        }
+    },
+    [Format.speedscope]: flamegraph => {
+        let traceEvents: TraceEvent[] = [];
+        function writeNode(node: FlamegraphNode, startTime: number) {
+            traceEvents.push({
+                ph: Constants.TRACE_EVENT_PHASE_BEGIN,
+                cat: 'p',
+                name: node.name,
+                pid: 0,
+                tid: 0,
+                ts: startTime,
+                args: {}
+            });
+            let currentTime = startTime;
+            for (let child of node.children) {
+                writeNode(child, currentTime);
+                currentTime += child.value;
+            }
+            traceEvents.push({
+                ph: Constants.TRACE_EVENT_PHASE_END,
+                cat: 'p',
+                name: node.name,
+                pid: 0,
+                tid: 0,
+                ts: startTime + node.value,
+                args: {}
+            });
+        }
+        writeNode(flamegraph, 0);
+
+        let trace: TraceStreamJson = {
+            traceEvents,
+            metadata: {}
+        };
+        fs.writeFileSync(outputFile, JSON.stringify(trace), { encoding: 'utf8' });
+    }
+};
+
 async function main() {
     let flamegraph = options.async
         ? await getFlamegraphFromLogStream(fs.createReadStream(input))
         : getFlamegraphFromLogText(fs.readFileSync(input, 'utf8'));
-
-    let dirname = pathlib.dirname(fs.realpathSync(process.argv[1]));
-    let htmlTemplateFile = pathlib.join(dirname, 'flamegraph.html');
-    let htmlTemplateText = fs.readFileSync(htmlTemplateFile, 'utf8');
-
-    let htmlText = htmlTemplateText
-        .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(dirname, m))
-        .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
-
-    fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
-
-    let dataJs = 'window.codeqlFlamegraphData = ' + JSON.stringify(flamegraph);
-    fs.writeFileSync(outputFile + '.data.js', dataJs, { encoding: 'utf8' });
-
-    if (options.open) {
-        require('open')(outputFile);
-    }
+    
+    let formatter = formatters[options.format];
+    formatter(flamegraph);
 }
 
 main();

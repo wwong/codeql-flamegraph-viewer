@@ -3,9 +3,9 @@
 
 
 "@asgerf/strongcli@^0.1.1":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@asgerf/strongcli/-/strongcli-0.1.1.tgz#e5e30a11180252c4d5bacd0c72285d729b79d568"
-  integrity sha512-ceruAVZSo32BOwD88aniCkRSIzSncG44cNN6p3xCXxjI3eN7rgBDcBL+PcL4ieX8VzF72mTQVhznQCMSwR4DsQ==
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@asgerf/strongcli/-/strongcli-0.1.2.tgz#27c36391504047a604bc78003924b107afbf7f74"
+  integrity sha512-56jgnzc/Mzl6imfImAphbc1UUZ4Y2oYiX6QSjPaayDFhITd1tmYIDep0CS5jASjUl6skpy6fZqA2TS2oP42GOA==
 
 "@babel/code-frame@^7.0.0":
   version "7.10.4"
@@ -55,6 +55,11 @@
   integrity sha512-Uv6h1sT+0DrblvIrolFtbvM1FgWm+/sy4B3pvLp67Zys+thcukzS5ekn7HsZFGpWP4Q3fYJCljbWQE/XivMRLw==
   dependencies:
     mkdirp "^1.0.4"
+
+"@tracerbench/trace-event@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@tracerbench/trace-event/-/trace-event-4.0.0.tgz#f71074d786358836ada562b5df640cf0362c947a"
+  integrity sha512-HjeDBhlPAs/4T5p9JcAXH2otN6HpWv68IiGKfek5pFPviYTLp+L2lz2+Bh0oL/hA3cjG1vxO31tAF9fN2vqH9g==
 
 "@types/color-name@^1.1.1":
   version "1.1.1"
