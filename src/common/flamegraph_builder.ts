@@ -148,6 +148,10 @@ export class FlamegraphBuilder {
             name: abbreviateStrings(stage.queryPredicates),
             value: totalValue(levelOneNodes),
             children: levelOneNodes,
+            rawLines: [
+                ['Query stage with predicates:'],
+                stage.queryPredicates
+            ]
         };
     }
 
