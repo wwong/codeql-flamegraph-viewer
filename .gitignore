@@ -6,6 +6,6 @@
 /example-data
 
 # Ignore files typically added while testing
-flamegraph.html
-flamegraph.html.data.js
-flamegraph.json
+/flamegraph.html
+/flamegraph.html.data.js
+/flamegraph.json
