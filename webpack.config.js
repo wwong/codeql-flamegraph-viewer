@@ -19,6 +19,10 @@ const cli = {
     entry: './src/bin/flamegraph.ts',
     output: {
         filename: 'flamegraph.js'
+    },
+    node: {
+        __dirname: false, // Do not rewrite __dirname
+        __filename: false,
     }
 };
 

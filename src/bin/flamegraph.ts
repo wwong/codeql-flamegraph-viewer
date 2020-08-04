@@ -7,7 +7,7 @@ import { TraceEvent, Constants, TraceStreamJson } from '@tracerbench/trace-event
 
 enum Format {
     html = 'html',
-    speedscope = 'speedscope',
+    trace = 'trace',
 }
 
 interface Options {
@@ -33,18 +33,22 @@ let { options, args } = program.main<Options>({
         valueHint: 'file',
         description: 'Where to write the output.',
     },
+    format: {
+        value: cli.oneOf(Format),
+        default: Format.html,
+        description: `
+Output format. Takes one of the following values:
+html:  Static HTML file with d3-flame-graph. (the default)
+trace: Trace Event JSON file.
+       Can be viewed in chrome://tracing or https://speedscope.app
+`
+    },
     open: {
-        description: 'Open the generated HTML file in a browser. Has no effect for --format speedscope.'
+        description: 'Open the generated HTML file in a browser.\nHas no effect if not generating HTML.'
     },
     async: {
         description: 'Use asynchronous parsing (for benchmarking)',
     },
-    format: {
-        value: cli.oneOf(Format),
-        default: Format.html,
-        valueHint: Object.keys(Format).join('|'),
-        description: `Output format. Default is 'html'.`
-    }
 });
 
 let input = args[0];
@@ -80,12 +84,12 @@ let outputDataFile = outputFile + '.data.js';
 
 const formatters: { [K in Format]: (node: FlamegraphNode) => void } = {
     [Format.html]: flamegraph => {
-        let dirname = pathlib.dirname(fs.realpathSync(process.argv[1]));
-        let htmlTemplateFile = pathlib.join(dirname, 'flamegraph.html');
+        let ownDirectory = __dirname;
+        let htmlTemplateFile = pathlib.join(ownDirectory, 'flamegraph.html');
         let htmlTemplateText = fs.readFileSync(htmlTemplateFile, 'utf8');
 
         let htmlText = htmlTemplateText
-            .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(dirname, m))
+            .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(ownDirectory, m))
             .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
 
         fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
@@ -97,7 +101,7 @@ const formatters: { [K in Format]: (node: FlamegraphNode) => void } = {
             require('open')(outputFile);
         }
     },
-    [Format.speedscope]: flamegraph => {
+    [Format.trace]: flamegraph => {
         let traceEvents: TraceEvent[] = [];
         function writeNode(node: FlamegraphNode, startTime: number) {
             traceEvents.push({
