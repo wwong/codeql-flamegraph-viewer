@@ -3,7 +3,6 @@
 .DS_Store
 /scrap
 /dist
-/example-data
 
 # Ignore files typically added while testing
 /flamegraph.html
