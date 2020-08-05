@@ -2,6 +2,8 @@
 
 The **CodeQL Flamegraph Viewer** visualizes predicate evaluation cost using [d3-flame-graph](https://github.com/spiermar/d3-flame-graph).
 
+![Flamegraph](./media/flamegraph.png)
+
 How to read the flamegraph:
 - The width of a box is its "total cost", including both its "own cost" and the cost of everything on top.
 - Costs are just raw tuple counts at the moment.
