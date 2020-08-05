@@ -23,7 +23,7 @@ var chart = d3f.flamegraph()
         focusedNode = event.data;
         showDetailsForNode(focusedNode);
     }
-);
+    );
 
 function insertDecimalSeparators(number: number | string) {
     let string = String(number);
@@ -41,11 +41,11 @@ var tooltip = (d3f as any).defaultFlamegraphTooltip() // missing from .d.ts file
     });
 
 function wrapFn<This, Args extends any[], R>(fn: (this: This, ...args: Args) => R, callback: (...args: Args) => void) {
-    return function(this: This, ...args: Args) {
+    return function (this: This, ...args: Args) {
         let result = fn.apply(this, args);
         callback(...args);
         return result;
-    }
+    };
 }
 
 // We don't have proper hooks for mouseover/mouseout events, so we hijack the tooltip's show/hide events.
@@ -66,7 +66,7 @@ function getTupleCountSummaryHtml(node: FlamegraphNode) {
         ownValue == null ? null : [ownValue, 'tuples from own evaluation'],
         [value, 'tuples from dominated dependencies']
     ]);
-    return `<table>${tupleLines.map(([count, description]) => 
+    return `<table>${tupleLines.map(([count, description]) =>
         `<tr><td>${escape(insertDecimalSeparators(count))}</td><td>${description}</td></tr>`
     ).join('\n')}</table>`;
 }
@@ -75,7 +75,7 @@ function getTupleCountPipelineRawText(node: FlamegraphNode) {
     if (iterations.length > 20) {
         let first = iterations.slice(0, 10);
         let last = iterations.slice(-10);
-        let skipped = `\n\n-------- Skipped ${iterations.length - 20} iterations -----------\n\n`
+        let skipped = `\n\n-------- Skipped ${iterations.length - 20} iterations -----------\n\n`;
         return deepJoin(first) + '\n' + skipped + deepJoin(last);
     } else {
         return deepJoin(iterations);
@@ -92,7 +92,7 @@ function showDetailsForNode(node: FlamegraphNode | undefined) {
 
 function showFlamegraph(rootNode: FlamegraphNode) {
     if (rootNode.children.length === 0) {
-        instructionsView.innerText = 'It seems there were no tuple counts in that file.'
+        instructionsView.innerText = 'It seems there were no tuple counts in that file.';
         instructionsView.style.display = 'visible';
         return;
     } else {
@@ -121,7 +121,7 @@ if ('codeqlFlamegraphData' in window) {
                 console.error(e);
             }
         }, 1);
-    }
+    };
 
     document.body.addEventListener('paste', event => {
         event.preventDefault();
@@ -132,7 +132,7 @@ if ('codeqlFlamegraphData' in window) {
 
     fileUploadInput.addEventListener('change', async e => {
         let files = fileUploadInput.files;
-        if (files == null || files.length < 1) return;
+        if (files == null || files.length < 1) { return; }
         let file = files[0];
         tryLoad(() => file.text());
     });
