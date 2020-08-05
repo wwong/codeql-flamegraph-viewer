@@ -4,6 +4,11 @@ The **CodeQL Flamegraph Viewer** visualizes predicate evaluation cost using [d3-
 
 ![Flamegraph](./media/flamegraph.png)
 
+### Try it
+- Use the [online viewer](https://asgerf.github.io/codeql-flamegraph-viewer/) and upload your own data.
+- Try the [example viewer](https://asgerf.github.io/codeql-flamegraph-viewer/example.html) with preloaded data.
+
+
 ### How to read the flamegraph:
 - The width of a box is its "total cost", including both its "own cost" and the cost of everything on top.
 - Costs are just raw tuple counts at the moment.
