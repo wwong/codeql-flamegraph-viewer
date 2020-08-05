@@ -4,10 +4,12 @@ import { select } from 'd3-selection';
 import { FlamegraphNode, getFlamegraphFromLogText } from '../common/flamegraph_builder';
 import escape = require('lodash.escape');
 import d3f = require('d3-flame-graph');
+import { withoutNulls } from '../common/util';
 
 type D3Node = { data: FlamegraphNode };
 
 const tupleCountView = document.getElementById('tuple-count-view')!;
+const tupleCountSummary = document.getElementById('tuple-count-summary')!;
 const instructionsContainer = document.getElementById('instructions-container')!;
 const instructionsView = document.getElementById('instructions')!;
 const fileUploadInput = document.getElementById('file-upload')! as HTMLInputElement;
@@ -34,11 +36,8 @@ function insertDecimalSeparators(number: number | string) {
 
 var tooltip = (d3f as any).defaultFlamegraphTooltip() // missing from .d.ts file
     .html(function (d: D3Node) {
-        let { name, value, ownValue } = d.data;
-        let own = ownValue == null ? '' : escape(insertDecimalSeparators(ownValue)) + ' tuples from own evaluation<br>';
-        return escape(name) + '<br><br>' +
-            own +
-            escape(insertDecimalSeparators(value)) + ' tuples from dominated dependencies';
+        let { name, kind } = d.data;
+        return (kind == null ? '' : escape(kind) + ': ') + escape(d.data.name);
     });
 
 function wrapFn<This, Args extends any[], R>(fn: (this: This, ...args: Args) => R, callback: (...args: Args) => void) {
@@ -61,16 +60,34 @@ chart.tooltip(tooltip);
 function deepJoin(str: string[][]) {
     return str.map(s => s.join('\n')).join('\n');
 }
-function showDetailsForNode(node: FlamegraphNode | undefined) {
+function getTupleCountSummaryHtml(node: FlamegraphNode) {
+    let { name, value, ownValue, rawLines } = node;
+    let tupleLines: [number, string][] = withoutNulls([
+        ownValue == null ? null : [ownValue, 'tuples from own evaluation'],
+        [value, 'tuples from dominated dependencies']
+    ]);
+    return `<table>${tupleLines.map(([count, description]) => 
+        `<tr><td>${escape(insertDecimalSeparators(count))}</td><td>${description}</td></tr>`
+    ).join('\n')}</table>`;
+}
+function getTupleCountPipelineRawText(node: FlamegraphNode) {
     let iterations = node?.rawLines ?? [];
     if (iterations.length > 20) {
         let first = iterations.slice(0, 10);
         let last = iterations.slice(-10);
         let skipped = `\n\n-------- Skipped ${iterations.length - 20} iterations -----------\n\n`
-        tupleCountView.innerText = deepJoin(first) + '\n' + skipped + deepJoin(last);
+        return deepJoin(first) + '\n' + skipped + deepJoin(last);
     } else {
-        tupleCountView.innerText = deepJoin(iterations);
+        return deepJoin(iterations);
     }
+}
+function showDetailsForNode(node: FlamegraphNode | undefined) {
+    if (node == null) {
+        tupleCountView.innerText = '';
+        return;
+    }
+    tupleCountSummary.innerHTML = getTupleCountSummaryHtml(node);
+    tupleCountView.innerText = getTupleCountPipelineRawText(node);
 }
 
 function showFlamegraph(rootNode: FlamegraphNode) {

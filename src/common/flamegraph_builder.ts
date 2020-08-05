@@ -14,6 +14,7 @@ export function getFlamegraphFromLogStream(stream: NodeJS.ReadableStream): Promi
 }
 
 export interface FlamegraphNode {
+    kind?: string;
     name: string;
     value: number;
     children: FlamegraphNode[];
@@ -147,13 +148,10 @@ export class FlamegraphBuilder {
 
         let levelOneNodes = withoutNulls(rootSccs.map(n => this.getFlamegraphNodeFromScc(n, sccDominated)));
         return {
+            kind: 'Stage',
             name: abbreviateStrings(stage.queryPredicates),
             value: totalValue(levelOneNodes),
             children: levelOneNodes,
-            rawLines: [
-                ['Query stage with predicates:'],
-                stage.queryPredicates
-            ]
         };
     }
 
