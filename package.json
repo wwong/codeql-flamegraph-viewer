@@ -6,7 +6,7 @@
         "lint": "eslint src/**/*.ts",
         "lint-fix": "eslint src/**/*.ts --fix",
         "check": "tsc --noEmit -p . && npm run lint",
-        "build-example": "yarn build && node ./dist/flamegraph ./example-data/example.logfile.log -o dist/example.html"
+        "build-example": "yarn build && node ./dist/flamegraph ./example-data/example.logfile.log -o dist/example.html --relative"
     },
     "devDependencies": {
         "@tracerbench/trace-event": "^4.0.0",

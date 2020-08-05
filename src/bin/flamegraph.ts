@@ -15,6 +15,7 @@ interface Options {
     open: boolean;
     async: boolean;
     format: Format;
+    relative: boolean;
 }
 let program = cli.program({
     helpIfEmpty: true,
@@ -49,6 +50,9 @@ trace: Trace Event JSON file.
     async: {
         description: 'Use asynchronous parsing (for benchmarking)',
     },
+    relative: {
+        description: 'Emit relative paths to files in flamegraph-viewer'
+    }
 });
 
 let input = args[0];
@@ -88,9 +92,13 @@ const formatters: { [K in Format]: (node: FlamegraphNode) => void } = {
         let htmlTemplateFile = pathlib.join(ownDirectory, 'flamegraph.html');
         let htmlTemplateText = fs.readFileSync(htmlTemplateFile, 'utf8');
 
+        let pathToOwnDirectory = options.relative
+            ? pathlib.relative(outputDir, ownDirectory)
+            : ownDirectory;
+
         let htmlText = htmlTemplateText
-            .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(ownDirectory, m))
-            .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.resolve(outputDataFile))}"></script>`);
+            .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(pathToOwnDirectory, m))
+            .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.basename(outputDataFile))}"></script>`);
 
         fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
 
