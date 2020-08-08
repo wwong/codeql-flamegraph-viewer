@@ -2,7 +2,7 @@ import { getDominanceRelation } from './dominators';
 import { streamLinesSync, streamLinesAsync } from './line_stream';
 import { abbreviateStrings } from './string_set_abbreviation';
 import { getStronglyConnectedComponents, Scc } from './strongly_connected_components';
-import { getDependenciesFromRA, Pipeline, StageEndedEvent, TupleCountParser, TupleCountStream } from './tuple_counts';
+import { getDependenciesFromRA, Pipeline, StageEndedEvent, TupleCountParser, TupleCountStream, isUnionOperator } from './tuple_counts';
 import { getInverse, withoutNulls } from './util';
 
 export function getFlamegraphFromLogText(text: string): FlamegraphNode {
@@ -68,7 +68,9 @@ export class FlamegraphBuilder {
         let node = this.getPredicateNode(name);
         node.seenEvaluation = true;
         for (let step of pipeline.steps) {
-            node.tupleCount += step.tupleCount;
+            if (!isUnionOperator(step.raText)) {
+                node.tupleCount += step.tupleCount;
+            }
             for (let otherRelation of getDependenciesFromRA(step.raText).inputRelations) {
                 otherRelation = rewritePredicateName(otherRelation);
                 node.dependencies.add(otherRelation);

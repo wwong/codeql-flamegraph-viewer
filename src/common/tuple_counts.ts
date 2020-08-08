@@ -167,3 +167,7 @@ export function getDependenciesFromRA(racode: string): RADependencies {
         inputRelations: Array.from(inputRelations)
     };
 }
+
+export function isUnionOperator(raText: string) {
+    return raText.includes('\\/');
+}
