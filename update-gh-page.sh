@@ -18,6 +18,7 @@ mkdir docs
 cp dist/*.{js,css,html} ./docs/
 mv ./docs/flamegraph.html ./docs/index.html
 git add docs/*.{js,css,html}
+touch docs/.nojekyll
 git commit -m 'Update gh-pages'
 git push
 
