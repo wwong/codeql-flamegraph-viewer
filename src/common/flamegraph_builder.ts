@@ -37,7 +37,7 @@ class PredicateNode {
 }
 
 function rewritePredicateName(name: string) {
-    return name.replace(/#(cur_delta|prev_delta|prev)/, '');
+    return name.replace(/(#(cur_delta|prev_delta|prev)|@staged_ext|_delta)$/, '');
 }
 
 export class FlamegraphBuilder {

@@ -82,9 +82,10 @@ export class TupleCountParser implements TupleCountStream {
             currentRawLines.push(match.input!);
         });
 
-        input.on(/Tuple counts for (.*):/, match => {
+        input.on(/Tuple counts for (.*):$/, match => {
             let [, name] = match;
             this.seenPredicateEvaluation = true;
+            name = name.replace(/\@\w+$/, '').replace(/\/\d+/, '');
             currentPredicateName = name;
             currentPredicateLine = input.lineNumber;
             currentRawLines.push(match.input!);
@@ -113,7 +114,10 @@ export class TupleCountParser implements TupleCountStream {
                 raText,
             });
             currentRawLines.push(match.input!);
-        }, () => { // Called if there was no match
+        }, (line) => { // Called if there was no match
+            if (line.trim().length === 0) {
+                return;
+            }
             if (currentPipelineSteps.length > 0 && currentPredicateName != null) {
                 this.onPipeline.fire({
                     predicate: currentPredicateName,
