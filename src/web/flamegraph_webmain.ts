@@ -5,6 +5,7 @@ import { FlamegraphNode, getFlamegraphFromLogText } from '../common/flamegraph_b
 import escape = require('lodash.escape');
 import d3f = require('d3-flame-graph');
 import { withoutNulls } from '../common/util';
+import { getFirstTimestampFromLogText } from '../common/timestamps';
 
 type D3Node = { data: FlamegraphNode };
 
@@ -13,6 +14,7 @@ const tupleCountSummary = document.getElementById('tuple-count-summary')!;
 const instructionsContainer = document.getElementById('instructions-container')!;
 const instructionsView = document.getElementById('instructions')!;
 const fileUploadInput = document.getElementById('file-upload')! as HTMLInputElement;
+const datasetNameElement = document.getElementById('dataset-name')!;
 
 /** The most recently clicked node in the flamegraph. */
 let focusedNode: FlamegraphNode | undefined;
@@ -90,7 +92,8 @@ function showDetailsForNode(node: FlamegraphNode | undefined) {
     tupleCountView.innerText = getTupleCountPipelineRawText(node);
 }
 
-function showFlamegraph(rootNode: FlamegraphNode) {
+function showFlamegraph(rootNode: FlamegraphNode, datasetName: string) {
+    datasetNameElement.innerText = datasetName;
     if (rootNode.children.length === 0) {
         instructionsView.innerText = 'It seems there were no tuple counts in that file.';
         instructionsView.style.display = 'visible';
@@ -106,7 +109,7 @@ function showFlamegraph(rootNode: FlamegraphNode) {
 
 // If data was preloaded via a script tag, load that now.
 if ('codeqlFlamegraphData' in window) {
-    showFlamegraph((window as any).codeqlFlamegraphData as FlamegraphNode);
+    showFlamegraph((window as any).codeqlFlamegraphData as FlamegraphNode, '');
 } else {
     instructionsContainer.style.display = 'block';
 
@@ -115,7 +118,11 @@ if ('codeqlFlamegraphData' in window) {
         setTimeout(async () => {
             try {
                 let text = await getText();
-                showFlamegraph(getFlamegraphFromLogText(text));
+                let timestamp = getFirstTimestampFromLogText(text);
+                let datasetName = timestamp == null
+                    ? ''
+                    : `Data from ${timestamp}`;
+                showFlamegraph(getFlamegraphFromLogText(text), datasetName);
             } catch (e) {
                 instructionsContainer.innerText = 'Failed';
                 console.error(e);
