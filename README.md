@@ -14,6 +14,7 @@ The **CodeQL Flamegraph Viewer** visualizes predicate evaluation cost using [d3-
 - Costs are just raw tuple counts at the moment.
     - In the future we'll want to support wall clock as well.
 - The bottom layer ("root") represents the entire run.
+- The next layer represents all the queries.
 - The next layer represents all the query stages.
 - The higher layers represent predicates.
 - Stacking of predicates represents the dominance in the dependency graph.
@@ -27,3 +28,32 @@ The **CodeQL Flamegraph Viewer** visualizes predicate evaluation cost using [d3-
 - Hover over a box to see its full name and tuple counts.
 - Hover away from the flamegraph to see the details of the focused node again (i.e. the last node you clicked on).
 - Click on the root node to zoom out again.
+
+### Generating input data:
+- Run CodeQL with the following options added to your query command (e.g. `codeql database analyze`, `codeql execute queries, etc`):
+```
+     --evaluator-log=codeql-eval-log.json \
+     --tuple-counting
+```
+
+A full command might look like:
+
+```
+codeql database analyze \
+    --output codeql-results.sarif \
+    --format sarif-latest \
+    --tuple-counting \
+    --evaluator-log codeql-eval-log.json \
+    --rerun \
+    codeqldb
+```
+
+- Do NOT run this CLI against minimized eval logs. Minimization strips type information from log events, which would require some lookback to determine what type of `CompletionEvent` we're looking at.
+
+### Test rendering the flamegraph via CLI:
+
+```
+ts-node src/bin/flamegraph.ts codeql-eval-log.json -o codeql-eval-log-graph.html --relative
+
+```
+

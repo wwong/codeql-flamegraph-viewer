@@ -1,11 +1,11 @@
 /// <reference lib="DOM"/>
 
-import { select } from 'd3-selection';
-import { FlamegraphNode, getFlamegraphFromLogText } from '../common/flamegraph_builder';
+import {select} from 'd3-selection';
+import {FlamegraphNode, getFlamegraphFromEvaluatorLogText} from '../common/flamegraph_builder';
+import {withoutNulls} from '../common/util';
+import {getFirstTimestampFromLogText} from '../common/timestamps';
 import escape = require('lodash.escape');
 import d3f = require('d3-flame-graph');
-import { withoutNulls } from '../common/util';
-import { getFirstTimestampFromLogText } from '../common/timestamps';
 
 type D3Node = { data: FlamegraphNode };
 
@@ -122,7 +122,7 @@ if ('codeqlFlamegraphData' in window) {
                 let datasetName = timestamp == null
                     ? ''
                     : `Data from ${timestamp}`;
-                showFlamegraph(getFlamegraphFromLogText(text), datasetName);
+                showFlamegraph(getFlamegraphFromEvaluatorLogText(text), datasetName);
             } catch (e) {
                 instructionsContainer.innerText = 'Failed';
                 console.error(e);

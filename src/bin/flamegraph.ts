@@ -1,9 +1,9 @@
 import * as cli from '@asgerf/strongcli';
 import * as fs from 'fs';
 import * as pathlib from 'path';
-import { getFlamegraphFromLogStream, getFlamegraphFromLogText, FlamegraphNode } from '../common/flamegraph_builder';
+import {FlamegraphNode, getFlamegraphFromEvaluatorLog} from '../common/flamegraph_builder';
+import {Constants, TraceEvent, TraceStreamJson} from '@tracerbench/trace-event';
 import escapeHtml = require('lodash.escape');
-import { TraceEvent, Constants, TraceStreamJson } from '@tracerbench/trace-event';
 
 enum Format {
     html = 'html',
@@ -17,6 +17,7 @@ interface Options {
     format: Format;
     relative: boolean;
 }
+
 let program = cli.program({
     helpIfEmpty: true,
     positionalArgHint: '<logfile or database>',
@@ -27,7 +28,7 @@ let program = cli.program({
   If given a database, the most recent log file from that database is used.
 `
 });
-let { options, args } = program.main<Options>({
+let {options, args} = program.main<Options>({
     outputFile: {
         name: ['-o', '--output'],
         value: String,
@@ -83,6 +84,7 @@ function mkdirp(path: string) {
         fs.mkdirSync(path);
     }
 }
+
 mkdirp(outputDir);
 let outputDataFile = outputFile + '.data.js';
 
@@ -100,10 +102,10 @@ const formatters: { [K in Format]: (node: FlamegraphNode) => void } = {
             .replace(/(flamegraph_webmain\.js|d3-flamegraph\.css)/g, m => pathlib.join(pathToOwnDirectory, m))
             .replace('<!--%DATA%-->', `<script src="${escapeHtml(pathlib.basename(outputDataFile))}"></script>`);
 
-        fs.writeFileSync(outputFile, htmlText, { encoding: 'utf8' });
+        fs.writeFileSync(outputFile, htmlText, {encoding: 'utf8'});
 
         let dataJs = 'window.codeqlFlamegraphData = ' + JSON.stringify(flamegraph);
-        fs.writeFileSync(outputFile + '.data.js', dataJs, { encoding: 'utf8' });
+        fs.writeFileSync(outputFile + '.data.js', dataJs, {encoding: 'utf8'});
 
         if (options.open) {
             require('open')(outputFile);
@@ -111,6 +113,7 @@ const formatters: { [K in Format]: (node: FlamegraphNode) => void } = {
     },
     [Format.trace]: flamegraph => {
         let traceEvents: TraceEvent[] = [];
+
         function writeNode(node: FlamegraphNode, startTime: number) {
             traceEvents.push({
                 ph: Constants.TRACE_EVENT_PHASE_BEGIN,
@@ -136,21 +139,20 @@ const formatters: { [K in Format]: (node: FlamegraphNode) => void } = {
                 args: {}
             });
         }
+
         writeNode(flamegraph, 0);
 
         let trace: TraceStreamJson = {
             traceEvents,
             metadata: {}
         };
-        fs.writeFileSync(outputFile, JSON.stringify(trace), { encoding: 'utf8' });
+        fs.writeFileSync(outputFile, JSON.stringify(trace), {encoding: 'utf8'});
     }
 };
 
 async function main() {
-    let flamegraph = options.async
-        ? await getFlamegraphFromLogStream(fs.createReadStream(input))
-        : getFlamegraphFromLogText(fs.readFileSync(input, 'utf8'));
-    
+    let flamegraph: FlamegraphNode = await getFlamegraphFromEvaluatorLog(fs.createReadStream(input));
+
     let formatter = formatters[options.format];
     formatter(flamegraph);
 }
