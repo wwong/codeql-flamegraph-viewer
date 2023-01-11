@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="d3-flamegraph.css">
+    <script src="example.html.data.js"></script>
+    <style>
+        #tuple-count-view {
+            white-space: pre;
+            font-size: 8pt;
+            font-family: monospace;
+            max-width: max-content;
+        }
+
+        #instructions-container {
+            text-align: center;
+        }
+
+        #instructions {
+            font-size: 12pt;
+            background-color: blanchedalmond;
+            margin-top: 200px;
+            padding-top: 0px;
+            padding: 60px;
+            width: 450px;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        html {
+            overflow-y: scroll;
+        }
+
+        body {
+            color: rgb(78, 78, 78);
+            margin: 0;
+            font-family: sans-serif;
+        }
+
+        #header-bar {
+            text-align: left;
+            color: white;
+            background-color: steelblue;
+            padding-left: 20px;
+            padding-top: 6px;
+            padding-bottom: 6px;
+        }
+
+        #title {
+            font-size: 16pt;
+        }
+
+        #dataset-name {
+            padding-left: 50px;
+            font-size: 12pt;
+            color: #eee;
+        }
+
+        #tuple-count-summary {
+            height: 4em;
+        }
+        #tuple-count-summary td:nth-child(1) {
+            text-align: right;
+            min-width: 120px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="header-bar">
+        <span id="title">Tuple count flamegraph</span>
+        <span id="dataset-name"></span>
+    </div>
+    <div id="instructions-container" style="display: none;">
+        <input type="file" style="display: none" id="file-upload">
+        <div id="instructions" onclick="document.getElementById('file-upload').click()">
+            <h3>Click to upload a log file with tuple counts</h3>
+            or paste it anywhere on this page.
+        </div>
+    </div>
+    <div style="text-align: center;">
+        <div id="chart"></div>
+    </div>
+    <div id="tuple-count-summary"></div>
+    <div id="tuple-count-view"></div>
+    <script src="flamegraph_webmain.js"></script>
+</body>
+
+</html>
