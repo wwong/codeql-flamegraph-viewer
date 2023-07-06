@@ -5,8 +5,8 @@ The **CodeQL Flamegraph Viewer** visualizes predicate evaluation cost using [d3-
 ![Flamegraph](./media/flamegraph.png)
 
 ### Try it
-- Use the [online viewer](https://asgerf.github.io/codeql-flamegraph-viewer/) and upload your own data.
-- Try the [example viewer](https://asgerf.github.io/codeql-flamegraph-viewer/example.html) with preloaded data.
+- Use the [online viewer](https://wwong.github.io/codeql-flamegraph-viewer/) and upload your own data.
+- Try the [example viewer](https://wwong.github.io/codeql-flamegraph-viewer/example.html) with preloaded data.
 
 
 ### How to read the flamegraph:
