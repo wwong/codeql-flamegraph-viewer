@@ -107,7 +107,6 @@ export class EvalLogTupleCountParser implements TupleCountStream {
                 size: predicateCompletedEvent.resultSize,
                 stages: _.uniq(_.flatten(Object.values(predicate.appearsAs)))
             });
-            delete this.openPredicates[predicateCompletedEvent.startEvent];
         });
 
         input.on(EventType.PIPELINE_STARTED, pipelineStartedEvent => {
@@ -180,8 +179,10 @@ export class EvalLogTupleCountParser implements TupleCountStream {
             this.onQueryEnded.fire({
                 queryName: query.queryName,
                 stages: query.stages
-            }
-            );
+            });
+
+            // Clear out openPredicates
+            this.openPredicates = {};
 
         });
     }
